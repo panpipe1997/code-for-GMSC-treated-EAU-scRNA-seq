@@ -1,0 +1,39 @@
+title: "R Notebook"
+	author: Yuehan Gao
+	
+	Insights gained from single-cell analysis of immune cells on gingiva-derived mesenchymal stem cells in experimental autoimmune uveitis
+	
+	This notebook will enable intercellular interaction analysis with CellphoneDB based on python
+  
+ #generation two files for CellphoneDB import#
+library(org.Hs.eg.db)
+library("clusterProfiler")
+
+n <- subset(m,sta=="n")
+
+data <- GetAssayData(n, assay="RNA", slot="data")
+data <- as.matrix(data)
+data <- as.data.frame(data)
+rownames(data) <- toupper(rownames(data))
+gene_symbol <- bitr(rownames(data), fromType = "SYMBOL",
+                toType = c("ENSEMBL"), OrgDb="org.Hs.eg.db")
+data <- data[rownames(data) %in% gene_symbol$SYMBOL,]
+data$SYMBOL <- rownames(data)
+d <- merge(data,gene_symbol,by="SYMBOL")
+d <- d[,-1]
+dim(d)
+a <- dim(d)
+d <- d[,c(a[2],1:a[2]-1)]
+write.table(d, file ="n_count.txt", row.names =F, quote =F, sep="\t")
+
+a <- n@meta.data
+a$Cell <- rownames(a)
+a <- a[,c(10,9)]
+write.table(a, file ="amd_meta.txt", row.names =F, quote =F, sep="\t")
+
+#CellPhoneDB based on python#
+cellphonedb method statistical_analysis n_meta.txt n_count.txt
+cellphonedb plot dot_plot 
+cellphonedb plot heatmap_plot n_meta.txt
+
+#for visualization, we utilized Cytoscape to construct networks.
