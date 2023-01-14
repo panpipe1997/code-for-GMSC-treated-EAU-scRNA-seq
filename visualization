@@ -14,6 +14,7 @@ title: "R Notebook"
 	library(pheatmap)
 	library(dittoSeq)
 
+##visualization based on Seurat##
 DimPlot(object =m, reduction = 'umap',
   group.by = 'cluster', label=FALSE,
   cols = c('t'='#F6B343','cdc'='#C6CF9A','b'='#69BE63','macro'='#E7403D','mono'='#E37524',
@@ -22,6 +23,15 @@ DimPlot(object =m, reduction = 'umap',
 DimPlot(object =m, reduction = 'umap',
   group.by = 'sta', label=FALSE,
   cols = c('n'='#b2d8d8','eau'='#66b2b2','msc'='#005b96'))
+  
+DimPlot(object =tc, reduction = 'umap',
+  group.by = 'cluster', label=FALSE,
+  cols=c('cd8-eff'='#F6B343','th17'='#C6CF9A','cd4-naive'='#69BE63','th1'='#E7403D','treg'='#E37524',
+'mki'='#9FCAE1','nk'='#FDDDA7','cd8-naive'='#198D43','tfh'='#E5E03E'))
+
+DimPlot(bc,reduction='umap',grup.by='sta')
+
+#visualization of dotplots and heatmaps#
 
 delta.genes <- c(
     "Cd3d", "Cd3e", "Cd3g", "Il7r", "Cd79a",
@@ -30,7 +40,24 @@ delta.genes <- c(
 "S100a9","Lcn2", "Anxa1", "Il1b", "Siglech", "Cox6a2","Irf8","Tcf4")
 
 DotPlot(m, features = delta.genes, group.by = "cluster", cols=c("lightgrey","#011F4B"))
-
 DoHeatmap(m, features = delta.genes, group.by = "cluster")
+
+Idents(m) <- 'cluster'
+
+#heatmap presented in figure 2#
+a <- AverageCountression(tc)
+genes <- c("Cd4", "Lef1", "Ccr7", "Ifngr1", "Cxcr6", "Lgals1", "Il17a",
+    "Ccr2", "Foxp3" , "Il2ra", "Cd40lg", "Icos", "Sh2d1a", "Nkg7",
+"Ccl5", "Cxcr3", "Cst7", "Hmgb2", "Stmn1", "Mki67", "Cd74", "Cd79a", "Cd79b", "Ms4a1", "Ncr1", "Gzma", "Gzmb")
+a <- a[rownames(a) %in% genes,]
+pheatmap(a, cellwidth = 10, cellheight = 8,border=FALSE, scale="row", fontsize = 8,cluster_row=F)
+
+#heatmap presented in figure 5#
+a <- AverageCountression(bc)
+genes <- c("Cd79a", "Cd79b", "Ms4a1", "Ighd", "Sell", "Stmn1", "H2afx",
+    "Birc5", "Mzb1" , "Xbp1", "Ly6c2", "Fn1", "Ccr2", "Apoe",
+"C1qa", "C1qb", "S100a9", "Anxa1", "Il1b", "Fscn1", "Ccl22", "Siglech", "Tcf4", "Irf4")
+a <- a[rownames(a) %in% genes,]
+pheatmap(a, cellwidth = 10, cellheight = 8,border=FALSE, scale="row", fontsize = 8,cluster_row=F)
 
 
