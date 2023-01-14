@@ -62,3 +62,98 @@ combined <- FindClusters(combined, resolution = 0.5)
 #complete sample integration#
 m <- immune.combined
 
+#Quality control#
+m[["percent.mt"]] <- PercentageFeatureSet(m, pattern = "^mt-")
+# Visualize QC metrics as a violin plot
+VlnPlot(m, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+m <- subset(m, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 10)
+VlnPlot(m1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+
+#Basic cluser seperation based on marker gene expression: T cells, B cells and other types
+
+#marker gene expression
+delta.genes <- c('Cd3d','Ms4a1','Cd79a','Ccr2','Ifitm3','C1qa','Apoe','Ccl22','Fscn1','Siglech','S100a9','Lcn2')
+DotPlot(m, features = delta.genes, group.by = "sta",scale = FALSE)
+
+Coarse annotations: 
+	0: B cell
+	1: T cell
+	2: T cell
+	3: B cell
+	4: T cell
+	5: B cell
+	6: T cell
+	7: B cell
+	8: T cell
+	9: B cell
+	10: T cell
+	11: T cell
+	12: monocyte
+	13: B cell
+	14: B cell
+	15: T cell
+	16: B cell
+	17: cDC
+	18: T cell
+	19: neutrophil
+	20: T cell
+	21: pDC
+	22: macrophage
+	cluster 23 and 24 were removed for higher expression of mitochondrial genes
+	
+markers <- FindAllMarkers(m, only.pos = T)
+markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_logFC)
+#edit the meta.data of our seurat object based on the list above
+
+#T cell subclustering and annotation
+tc <- subset(m,seurat_clusters %in% c(1,2,4,6,8,11,14,15,18,20)
+tc <- FindVariableFeatures(tc, selection.tcethod = "vst", nfeatures = 2000)
+all.genes <- rownatces(tc)
+tc <- ScaleData(tc, features = all.genes)
+
+tc <- RunPCA(tc, berbose=FALSE)
+tc <- FindNeighbors(tc, ditcs = 1:50,verbose=FALSE)
+tc <- FindClusters(tc, resolution =1,verbose=FALSE)
+tc <- RunUTCAP(tc, ditcs = 1:50,verbose=FALSE)
+tc <- RunTSNE(tc, ditcs = 1:50,verbose=FALSE)
+
+Coarse annotations: 
+	0: Cd4-naive
+	1: Cd8-naive
+	2: Cd8-naive
+	3: Cd8-effector
+	4: Th1 and Tfh
+	5: Treg
+	7: Pro-T
+	10: Th17
+	13: NK
+	14: NK
+	cluster 6,8,9,11,12,15 and 16 were removed for higher expression of mitochondrial genes
+#annotate the T cell subsets based on the list above
+
+#marker gene expression
+delta.genes <- c('Cd4','Ccr7','Rorc','Il17a','Foxp3','Il2ra','Cd8a','Igfbp4','Ccl5','Cxcr3','Mki67','Klrb1c')
+DotPlot(tc, features = delta.genes, group.by = "sta",scale = FALSE)
+
+#B cell annotation
+bc <- subset(m,seurat_clusters %in% c(0,3,5,7,9,13,14,16)
+delta.genes <- c('Mzb1','Ms4a1','Xbp1','H2afx','Birc5','Stmn1','Sell','Ighd','Cd79a','Cd79b')
+DotPlot(bc, features = delta.genes, group.by = "sta",scale = FALSE)
+
+bc <- FindVariableFeatures(bc, selection.bcethod = "vst", nfeatures = 2000)
+all.genes <- rownabces(bc)
+bc <- ScaleData(bc, features = all.genes)
+
+bc <- RunPCA(bc, berbose=FALSE)
+bc <- FindNeighbors(bc, dibcs = 1:50,verbose=FALSE)
+bc <- FindClusters(bc, resolution =1,verbose=FALSE)
+bc <- RunUBCAP(bc, dibcs = 1:50,verbose=FALSE)
+bc <- RunTSNE(bc, dibcs = 1:50,verbose=FALSE)
+
+Coarse annotations: 
+	0 to 8, and 11 to 15: naive B cells
+	9: plasma
+	10: germinal
+#annotate the B cell subsets based on the list above
+
+This Seurat object can now be used for post-processing analysis.
