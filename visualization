@@ -1,0 +1,36 @@
+title: "R Notebook"
+	author: Yuehan Gao
+	
+	Insights gained from single-cell analysis of immune cells on gingiva-derived mesenchymal stem cells in experimental autoimmune uveitis
+	
+	This notebook will enable visualization of the seurat object. Please be aware that figure adjustment has been performed with AI.
+	
+	#Load libraries
+	
+	library(dplyr)
+	library(Seurat)
+	library(ggplot2)
+	library(ggpubr)
+	library(pheatmap)
+	library(dittoSeq)
+
+DimPlot(object =m, reduction = 'umap',
+  group.by = 'cluster', label=FALSE,
+  cols = c('t'='#F6B343','cdc'='#C6CF9A','b'='#69BE63','macro'='#E7403D','mono'='#E37524',
+'pdc'='#9FCAE1','neu'='#3282BC'))
+
+DimPlot(object =m, reduction = 'umap',
+  group.by = 'sta', label=FALSE,
+  cols = c('n'='#b2d8d8','eau'='#66b2b2','msc'='#005b96'))
+
+delta.genes <- c(
+    "Cd3d", "Cd3e", "Cd3g", "Il7r", "Cd79a",
+    "Cd79b", "Ms4a1", "Mzb1", "Ly6c2", "Ccl5","Ccr2",
+    "Ccl22", "Fscn1", "Apoe", "C1qa", "C1qb",
+"S100a9","Lcn2", "Anxa1", "Il1b", "Siglech", "Cox6a2","Irf8","Tcf4")
+
+DotPlot(m, features = delta.genes, group.by = "cluster", cols=c("lightgrey","#011F4B"))
+
+DoHeatmap(m, features = delta.genes, group.by = "cluster")
+
+
