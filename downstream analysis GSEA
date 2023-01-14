@@ -1,0 +1,57 @@
+title: "R Notebook"
+	author: Yuehan Gao
+	
+	Insights gained from single-cell analysis of immune cells on gingiva-derived mesenchymal stem cells in experimental autoimmune uveitis
+	
+	This notebook will enable downstream GSEA analysis.
+	
+#Load libraries
+	
+library(msigdbr)
+library(fgsea)
+library(dplyr)
+library(ggplot2)
+
+msigdbr_show_species()
+m_df<- msigdbr(species = "Mus musculus", category = "H")
+fgsea_sets<- m_df %>% split(x = .$gene_symbol, f = .$gs_name) 
+
+gesa_TvsC_allgenes<-FindMarkers(m, ident.1 = "msc", ident.2 = "eau", verbose = FALSE,test.use ="roc",logfc.threshold = 0.01,group.by="sta",subset.ident="t")
+gesa_TvsC_allgenes$gene<-rownames(gesa_TvsC_allgenes)
+
+gsea_genes<-gesa_TvsC_allgenes%>%arrange(desc(myAUC), desc(avg_diff)) %>%dplyr::select(gene,avg_diff)
+library(tibble)
+ranks <- deframe(gsea_genes)
+fgseaRes <- fgsea(pathways = fgsea_sets,
+                  stats = ranks ,
+                  minSize=5,
+                  maxSize=500,
+                  nperm=10000)
+library(dplyr)
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+
+fgseaResTidy %>%
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>%
+  arrange(padj) %>%
+  head()
+
+
+ggplot(fgseaResTidy %>% filter(padj < 0.5) %>% head(n= 30), aes(reorder(pathway, NES), NES)) +
+  geom_col(aes(fill= NES < 0)) +
+  coord_flip() +
+  labs(x="Pathway", y="Normalized Enrichment Score",
+       title="Hallmark pathways NES from GSEA") +
+  theme_minimal() 
+
+plotEnrichment(fgsea_sets[["HALLMARK_TNFA_SIGNALING_VIA_NFKB"]],
+               ranks) + labs(title="HALLMARK_TNFA_SIGNALING_VIA_NFKB")
+plotEnrichment(fgsea_sets[["HALLMARK_INTERFERON_ALPHA_RESPONSE"]],
+               ranks) + labs(title="HALLMARK_INTERFERON_ALPHA_RESPONSE")
+plotEnrichment(fgsea_sets[["HALLMARK_INTERFERON_GAMMA_RESPONSE"]],
+               ranks) + labs(title="HALLMARK_INTERFERON_GAMMA_RESPONSE")
+plotEnrichment(fgsea_sets[["HALLMARK_INFLAMMATORY_RESPONSE"]],
+               ranks) + labs(title=" HALLMARK_ INFLAMMATORY_RESPONSE")
+               
+GSEA analysis was accomplished. Please be aware that figure adjustment was performed in AI.
