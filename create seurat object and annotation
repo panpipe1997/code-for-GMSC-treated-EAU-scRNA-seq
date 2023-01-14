@@ -1,0 +1,64 @@
+title: "R Notebook"
+	author: Yuehan Gao
+	
+	Insights gained from single-cell analysis of immune cells on gingiva-derived mesenchymal stem cells in experimental autoimmune uveitis
+	
+	This notebook will enable generation of the Seurat object used for post-processing from cell ranger outputs from raw data deposited in GSA. 
+For code on downstream analysis, please see the notebook "downstream_analysis"
+	
+	#Load libraries
+	
+	library(dplyr)
+	library(Seurat)
+	library(ggplot2)
+	library(ggpubr)
+	library(pheatmap)
+	library(tidyverse)
+	
+	# LOADING DATA
+	We developed single-cell RNA transcriptional profiles of CDLNs of three groups of mice (normal controls, eau mouse models, GMSC-treated mouse models)
+	
+	Download raw data from GSA (accession: HRA002422, HRA000850), and follow the cellranger pipeline for data processing (https://support.10xgenomics.com/single-cell-gene-expression/software/overview) and generate the output files for downstream analysis. 
+	
+  msc.data <- Read10X(data.dir = "msc/filtered_feature_bc_matrix")
+# Initialize the Seurat object with the raw (non-normalized data).
+  msc<- CreateSeuratObject(counts = msc.data, project = msc, min.cells = 3, min.features = 200)
+  msc
+  
+  eau.data <- Read10X(data.dir = "eau/filtered_feature_bc_matrix")
+  eau<- CreateSeuratObject(counts = eau.data, project = eau, min.cells = 3, min.features = 200)
+  eau
+  
+  n.data <- Read10X(data.dir = "n/filtered_feature_bc_matrix")
+  n <- CreateSeuratObject(counts = n.data, project = n, min.cells = 3, min.features = 200)
+  n
+
+#merge objets#
+m <- merge(msc,y=c(n,eau),add.cell.ids=c("msc","n","eau"),project= "gmsc")
+m.list <- SplitObject(m, split.by = "sta")
+
+# normalize and identify variable features for each dataset independently
+m.list <- lapply(X = m.list, FUN = function(x) {
+    x <- NormalizeData(x)
+    x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
+})
+
+# select features that are repeatedly variable across datasets for integration
+features <- SelectIntegrationFeatures(object.list = m.list)
+anchors <- FindIntegrationAnchors(object.list = m.list, anchor.features = features)
+# this command creates an 'integrated' data assay
+combined <- IntegrateData(anchorset = anchors)
+
+# specify that we will perform downstream analysis on the corrected data note that the
+# original unmodified data still resides in the 'RNA' assay
+DefaultAssay(combined) <- "integrated"
+
+# Run the standard workflow for visualization and clustering
+combined <- ScaleData(combined, verbose = FALSE)
+combined <- RunPCA(combined, npcs = 30, verbose = FALSE)
+combined <- RunUMAP(combined, reduction = "pca", dims = 1:30)
+combined <- FindNeighbors(combined, reduction = "pca", dims = 1:30)
+combined <- FindClusters(combined, resolution = 0.5)
+#complete sample integration#
+m <- immune.combined
+
